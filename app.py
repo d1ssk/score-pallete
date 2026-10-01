@@ -161,7 +161,7 @@ def main():
         st.button(t("clear"), key="clear", on_click=clear_upload)
 
     st.divider()
-    st.caption("Created by Daichi Sasaki")
+    st.caption("[Daichi Sasaki](https://d1ssk.github.io/)")
 
 
 if __name__ == "__main__":
