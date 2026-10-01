@@ -160,6 +160,9 @@ def main():
     if uploaded is not None:
         st.button(t("clear"), key="clear", on_click=clear_upload)
 
+    st.divider()
+    st.caption("Created by Daichi Sasaki")
+
 
 if __name__ == "__main__":
     main()
