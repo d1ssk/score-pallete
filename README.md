@@ -1,12 +1,12 @@
-# Score Palette — Streamlitアプリ
+# Score Palette — Streamlit App
 
-楽譜PDFを1つアップロードし、ド〜シの配色を選んで、符頭を着色したPDFをダウンロードするアプリです。読み取り結果のCSVもダウンロードできます。
+Upload a sheet music PDF, choose colors for the seven note names (C–B), and download a PDF with colored noteheads. A CSV recognition report is also available.
 
-このフォルダだけで動作します。親フォルダの `color_scores.py`、`colors.json`、`inputs/`、`outputs/` は読み書きしません。変換処理はローカル版から独立させたもので、以後の変更は自動で共有されません。初期配色はアプリ作成時のローカル版 `colors.json` を基に、レ（D）を `#FFEE74` に変更しています。
+The app runs independently from this folder. It does not read or write the parent folder's `color_scores.py`, `colors.json`, `inputs/`, or `outputs/`. Its conversion code is separate from the local command-line version, so future changes are not automatically shared between them. The default palette is based on the local version's `colors.json` at the time the app was created, with D (Re) changed to `#FFEE74`.
 
-## ローカルで起動
+## Run locally
 
-Python 3.12を推奨します。このフォルダをカレントディレクトリにして実行してください。
+Python 3.12 is recommended. Run the following commands from the app folder:
 
 ```sh
 cd /Users/dsasaki/convert_scores/streamlit_app
@@ -15,51 +15,51 @@ python3.12 -m venv .venv
 .venv/bin/python -m streamlit run app.py
 ```
 
-ブラウザで `http://localhost:8501` を開きます。終了はターミナルで `Ctrl+C` です。次回からは最後のコマンドだけで起動できます。
+Open `http://localhost:8501` in your browser. Press `Ctrl+C` in the terminal to stop the app. For subsequent runs, only the last command is needed.
 
-## 使い方
+## How to use
 
-画面右上の小さな「English」／「日本語」ボタンを1回押すと、表示言語が切り替わります。配色、アップロード、作成済みの結果を保持したまま、説明・操作ボタン・エラー・認識上の注意が切り替わります。CSVの列名や音名などのデータ形式は言語にかかわらず共通です。Streamlit標準ウィジェット内部の「Browse files」などの文言はフレームワークの表示に従います。
+Click the small **English** / **日本語** button in the upper-right corner to switch languages. Instructions, buttons, errors, and recognition warnings change language while your colors, uploaded file, and existing results are preserved. The CSV format, including column names and note data, remains the same in both languages. Text inside Streamlit's built-in widgets, such as “Browse files,” follows the framework's own display behavior.
 
-対応範囲、色付けのルール、容量・ページ上限、アップロードデータの扱いは「対応する楽譜と色付けのルール」を開いて確認できます。
+Open **Supported sheet music and coloring rules** for supported formats, coloring rules, file size and page limits, and information about how uploads are handled.
 
-1. PDFを1ファイル選びます（20MB・50ページ以下）。
-2. 必要に応じてド〜シの色を変更します。
-3. 「色付けする」を押します。
-4. 結果と注意を確認して、PDFまたはCSVをダウンロードします。
+1. Select one PDF, up to 20 MB and 50 pages.
+2. Adjust the colors for C–B if needed.
+3. Click **Color my score**.
+4. Review the results and warnings, then download the PDF or CSV.
 
-未着色の音符や認識上の注意がある場合、通常はPDFを出力せず、CSVだけを提供します。「読めた音符だけ着色して出力する（部分出力）」を選んで再実行すると、認識できた箇所のみ着色したPDFを作れます。部分出力には `_partial_colored.pdf` という名前を付けます。着色できる音符が0個の場合は、部分出力でもPDFを作りません。
+By default, uncolored notes or recognition warnings block PDF output, leaving only the CSV available. Enable **Allow partial output (color recognized notes only)** and run again to create a PDF with only the recognized notes colored. Partial output filenames end in `_partial_colored.pdf`. If no notes can be colored, no PDF is produced, even with partial output enabled.
 
-ファイル・配色・部分出力設定を変更すると、古い結果とダウンロードボタンを消します。「PDFと結果をクリア」でアプリが保持するアップロードと結果をクリアできます。
+Changing the file, colors, or partial-output setting clears the previous results and download buttons. Click **Clear PDF and results** to clear the upload and results held by the app.
 
-## 対応範囲
+## Supported formats and limitations
 
-- 従来型Maestroフォントと、対応する文字配置のCIDフォントを使ったベクターPDFが対象です。
-- 五線、文字、符尾、レイアウトを維持し、黒い符頭と白い符頭・全音符の輪郭を着色します。
-- 固定ドの記譜上の音名で分類します。♯・♭は区別せず、オクターブ違いも同じ色です。
-- スキャン・写真、図形のみの符頭、SMuFLなど未対応フォント、Form XObject内の楽譜、回転ページは対象外です。暗号化されたPDFも受け付けません。
-- 未対応の音符は検出自体ができない場合があります。未着色数が0でも、すべての音符を正しく読めた保証にはなりません。必ず出力をご確認ください。
+- Supports vector PDFs using legacy Maestro fonts or CID fonts with supported character mappings.
+- Colors filled noteheads and the outlines of hollow and whole-note heads while preserving staff lines, text, flags, and layout.
+- Colors follow written note names using fixed do. Sharps and flats are not distinguished, and notes in different octaves share the same color.
+- Scans, photographs, noteheads drawn only as shapes, unsupported fonts such as SMuFL, music inside Form XObjects, and rotated pages are not supported. Encrypted PDFs are also rejected.
+- Unsupported notes may go undetected. A count of zero uncolored notes does not guarantee that every note was recognized correctly. Always check the output.
 
-CSVの `status` が `colored` なら着色対象です。`no_staff`（五線不明）、`no_clef`（音部記号不明）、`ambiguous_staff`（所属五線が曖昧）、`off_staff_grid`（五線位置との不整合）などは未着色です。通常モードでPDFを止めた場合の `colored` は、出力を許可すれば着色できる音符を示します。座標はPDFのMediaBox左上を基準とするポイント単位です。CSVは日本語を扱いやすいUTF-8 BOM付きです。
+In the CSV, a `status` of `colored` identifies a note selected for coloring. Other statuses indicate uncolored notes, including `no_staff` (staff not found), `no_clef` (clef not found), `ambiguous_staff` (uncertain staff assignment), and `off_staff_grid` (position does not align with the staff grid). When PDF output is blocked in normal mode, `colored` means the note could be colored if output were allowed. Coordinates are in PDF points measured from the top-left corner of the page's MediaBox. The CSV uses UTF-8 with a BOM to help applications display Japanese text correctly.
 
-## アップロードの扱いと運用
+## Upload handling and operation
 
-PDFはアプリの実行サーバーへ送信され、メモリ上で変換されます。アプリ自身はPDF・CSVをディスクや外部ストレージに永続保存せず、変換結果の共有キャッシュも使いません。結果はStreamlitのセッションごとに保持します。ホスティング基盤のメモリ回収やアクセスログの扱いまで保証するものではありません。
+PDFs are sent to the application server and converted in memory. The app itself does not persist PDFs or CSVs to disk or external storage, and it does not use a shared cache for conversion results. Results are held separately for each Streamlit session. This does not guarantee how the hosting platform handles memory reclamation or access logs.
 
-20MB・50ページの制限は通常利用の負荷を抑えるためのものです。圧縮率の高いPDFや複雑なPDFに対するメモリ・実行時間の厳密な上限や、アクセス頻度制限は設けていません。不特定多数による大量利用を想定する場合は、別プロセスでの時間制限、ジョブキュー、レート制限などを追加してください。初期版は小規模な共有利用を想定しています。
+The 20 MB and 50-page limits help control resource use during normal operation. They do not impose strict memory or execution-time limits on highly compressed or complex PDFs, and the app does not include request rate limiting. For heavy use by the general public, consider adding process-level timeouts, a job queue, and rate limiting. This initial version is intended for small-scale shared use.
 
-## 開発・検証
+## Development and validation
 
 ```sh
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-テストは人工的に作ったPDFのみを使うため、このフォルダ単独で実行できます。音名・配色・座標の保持、部分出力、未対応入力、入力制限に加え、StreamlitのAppTestで画面・変換・設定変更後の結果の破棄を検証します。AppTestではファイルアップロードの戻り値を人工PDFで置き換えます。実ブラウザのファイル選択やダウンロード保存操作そのものを自動化したテストではありません。
+Tests use only synthetic PDFs and can run independently from this folder. They cover note names, colors, coordinate preservation, partial output, unsupported inputs, and input limits. Streamlit's AppTest also checks the interface, conversion flow, and removal of stale results after settings change. In AppTest, the file uploader's return value is replaced with a synthetic PDF. These tests do not automate file selection or saving downloads in a real browser.
 
-主なファイル：
+Main files:
 
-- `app.py`：画面、セッション内の結果管理、ダウンロード。
-- `score_coloring.py`：PDF認識・着色処理。`convert_pdf(bytes, colors, allow_partial)` を公開。
-- `messages.py`：画面と変換時の診断メッセージの日本語・英語訳。
-- `requirements.txt`：検証に使用する直接依存パッケージの固定バージョン。
-- `.streamlit/config.toml`：アップロード上限、利用統計の無効化、画面の配色。
+- `app.py`: Interface, session result management, and downloads.
+- `score_coloring.py`: PDF recognition and coloring, exposing `convert_pdf(bytes, colors, allow_partial)`.
+- `messages.py`: Japanese and English translations for the interface and conversion diagnostics.
+- `requirements.txt`: Pinned versions of the direct dependencies used for validation.
+- `.streamlit/config.toml`: Upload limit, usage statistics opt-out, and visual theme.
