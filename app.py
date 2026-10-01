@@ -1,6 +1,6 @@
 """Standalone Streamlit entrypoint: streamlit run app.py."""
 
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 import streamlit as st
 
@@ -48,7 +48,11 @@ def main():
     def t(key, **values):
         return translate(language, key, **values)
 
-    st.set_page_config(page_title=t("title"), page_icon="🎼", layout="centered")
+    st.set_page_config(
+        page_title=t("title"),
+        page_icon=Path(__file__).with_name("favicon.png"),
+        layout="centered",
+    )
     # Streamlit scrolls its main panel rather than the document body.
     # Reserve scrollbar space even while the rules expander is closed.
     st.html("""
