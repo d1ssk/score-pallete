@@ -1,0 +1,18 @@
+<script>
+(() => {
+  if (window.location.hostname !== "score-pallete.streamlit.app") return;
+  // Streamlit reruns reuse this browser window. A full reload starts a new view.
+  if (window.__scorePaletteAnalyticsInitialized) return;
+  window.__scorePaletteAnalyticsInitialized = true;
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () {
+    window.dataLayer.push(arguments);
+  };
+  window.gtag("js", new Date());
+  window.gtag("config", "G-P4BVZ9ZZ0E");
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = "https://www.googletagmanager.com/gtag/js?id=G-P4BVZ9ZZ0E";
+  document.head.appendChild(script);
+})();
+</script>

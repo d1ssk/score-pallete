@@ -53,6 +53,8 @@ def main():
         page_icon=Path(__file__).with_name("favicon.png"),
         layout="centered",
     )
+    # Trusted, static HTML only; browser state prevents duplicate tracking on reruns.
+    st.html(Path(__file__).with_name("analytics.html"), unsafe_allow_javascript=True)
     # Streamlit scrolls its main panel rather than the document body.
     # Reserve scrollbar space even while the rules expander is closed.
     st.html("""
