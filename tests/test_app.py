@@ -18,6 +18,12 @@ def button(app, label):
 
 
 class AppTests(unittest.TestCase):
+    def setUp(self):
+        # AppTest doesn't execute component JavaScript; exercise storage in a real browser.
+        bridge = patch("palette_storage.browser_palette")
+        bridge.start()
+        self.addCleanup(bridge.stop)
+
     def test_initial_page_and_reset(self):
         app = AppTest.from_file(str(APP)).run()
         self.assertFalse(app.exception)
@@ -41,7 +47,7 @@ class AppTests(unittest.TestCase):
     def test_language_switch_keeps_colors_and_results_and_translates_warnings(self):
         upload = BytesIO(make_score(blank_page=True))
         upload.name = "部分.pdf"
-        with patch("streamlit.file_uploader", return_value=upload):
+        with patch("streamlit.file_uploader", side_effect=lambda *a, **kw: upload if kw.get("type") == ["pdf"] else None):
             app = AppTest.from_file(str(APP)).run()
             app.color_picker[1].set_value("#123456").run()
             app.checkbox[0].check().run()
@@ -56,7 +62,7 @@ class AppTests(unittest.TestCase):
             self.assertEqual(app.session_state["result"].pdf_bytes, original_pdf)
             self.assertIn("A partial PDF is ready", app.warning[0].value)
             self.assertIn("Page 2: No recognizable noteheads", app.text[0].value)
-            self.assertEqual(app.get("download_button")[0].label, "Download colored PDF")
+            self.assertEqual(app.get("download_button")[1].label, "Download colored PDF")
             button(app, "日本語").click().run()
             self.assertEqual(app.session_state["result"].pdf_bytes, original_pdf)
             self.assertIn("2ページ", app.text[0].value)
@@ -66,7 +72,7 @@ class AppTests(unittest.TestCase):
     def test_error_is_translated_without_reprocessing(self):
         upload = BytesIO(b"not a pdf")
         upload.name = "invalid.pdf"
-        with patch("streamlit.file_uploader", return_value=upload):
+        with patch("streamlit.file_uploader", side_effect=lambda *a, **kw: upload if kw.get("type") == ["pdf"] else None):
             app = AppTest.from_file(str(APP)).run()
             button(app, "色付けする").click().run()
             self.assertIn("PDF形式", app.error[0].value)
@@ -80,15 +86,15 @@ class AppTests(unittest.TestCase):
         upload = BytesIO(make_score())
         upload.name = "テスト.pdf"
         # AppTest has no file_uploader setter; inject only the upload widget.
-        with patch("streamlit.file_uploader", return_value=upload):
+        with patch("streamlit.file_uploader", side_effect=lambda *a, **kw: upload if kw.get("type") == ["pdf"] else None):
             app = AppTest.from_file(str(APP)).run()
             button(app, "色付けする").click().run()
             self.assertFalse(app.exception)
             self.assertEqual(len(app.success), 1)
-            self.assertEqual(len(app.get("download_button")), 2)
+            self.assertEqual(len(app.get("download_button")), 3)
             self.assertTrue(app.session_state["result"].pdf_bytes.startswith(b"%PDF-"))
             app.color_picker[1].set_value("#ABCDEF").run()
-            self.assertEqual(len(app.get("download_button")), 0)
+            self.assertEqual(len(app.get("download_button")), 1)
             button(app, "色付けする").click().run()
             button(app, "PDFと結果をクリア").click().run()
             self.assertNotIn("result", app.session_state)
@@ -97,24 +103,24 @@ class AppTests(unittest.TestCase):
     def test_partial_mode_and_error_feedback(self):
         upload = BytesIO(make_score(blank_page=True))
         upload.name = "部分.pdf"
-        with patch("streamlit.file_uploader", return_value=upload):
+        with patch("streamlit.file_uploader", side_effect=lambda *a, **kw: upload if kw.get("type") == ["pdf"] else None):
             app = AppTest.from_file(str(APP)).run()
             button(app, "色付けする").click().run()
             self.assertFalse(app.exception)
             self.assertIsNone(app.session_state["result"].pdf_bytes)
-            self.assertEqual(len(app.get("download_button")), 1)
+            self.assertEqual(len(app.get("download_button")), 2)
             app.checkbox[0].check().run()
             self.assertNotIn("result", app.session_state)
             button(app, "色付けする").click().run()
-            self.assertEqual(len(app.get("download_button")), 2)
+            self.assertEqual(len(app.get("download_button")), 3)
             self.assertTrue(app.warning)
         bad_upload = BytesIO(b"not a pdf")
         bad_upload.name = "invalid.pdf"
-        with patch("streamlit.file_uploader", return_value=bad_upload):
+        with patch("streamlit.file_uploader", side_effect=lambda *a, **kw: bad_upload if kw.get("type") == ["pdf"] else None):
             button(app, "色付けする").click().run()
             self.assertFalse(app.exception)
             self.assertTrue(app.error)
-            self.assertEqual(len(app.get("download_button")), 0)
+            self.assertEqual(len(app.get("download_button")), 1)
 
 
 if __name__ == "__main__":

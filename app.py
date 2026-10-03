@@ -1,10 +1,13 @@
 """Standalone Streamlit entrypoint: streamlit run app.py."""
 
 from pathlib import Path, PurePosixPath
+from uuid import uuid4
 
 import streamlit as st
 
 from messages import SOLFEGE_EN, translate
+from palette import MAX_PALETTE_BYTES, parse_palette, serialize_palette
+from palette_storage import browser_palette
 from score_coloring import (
     DEFAULT_COLORS, LETTERS, MAX_PAGES, MAX_UPLOAD_MB, SOLFEGE,
     ConversionError, convert_pdf,
@@ -18,9 +21,53 @@ def discard_result():
 
 
 def reset_palette():
-    discard_result()
+    palette_changed()
     for note, color in DEFAULT_COLORS.items():
         st.session_state[f"color_{note}"] = color
+
+
+def palette_changed():
+    discard_result()
+    # A deliberate edit takes precedence over a late browser restore.
+    st.session_state["palette_ready"] = True
+    st.session_state.pop("palette_notice", None)
+
+
+def apply_palette(colors):
+    palette_changed()
+    for note, color in colors.items():
+        st.session_state[f"color_{note}"] = color
+
+
+def restore_browser_palette():
+    if st.session_state.get("palette_ready"):
+        return
+    loaded = st.session_state.get("palette_storage", {}).get("loaded")
+    if not isinstance(loaded, dict):
+        return
+    st.session_state["palette_ready"] = True
+    raw = loaded.get("raw")
+    if raw is not None:
+        try:
+            apply_palette(parse_palette(raw))
+        except ValueError:
+            st.session_state["palette_notice"] = "palette_stored_invalid"
+
+
+def import_palette():
+    uploaded = st.session_state.get("palette_upload")
+    st.session_state.pop("palette_notice", None)
+    if uploaded is None:
+        return
+    try:
+        # Bound the read as well as validating the decoded settings.
+        uploaded.seek(0)
+        colors = parse_palette(uploaded.read(MAX_PALETTE_BYTES + 1))
+    except ValueError:
+        st.session_state["palette_notice"] = "palette_invalid"
+        return
+    apply_palette(colors)
+    st.session_state["palette_notice"] = "palette_imported"
 
 
 def clear_upload():
@@ -89,6 +136,8 @@ def main():
         help=t("upload_help", mb=MAX_UPLOAD_MB, pages=MAX_PAGES),
     )
     st.subheader(t("color_step"))
+    if "palette_session" not in st.session_state:
+        st.session_state["palette_session"] = uuid4().hex
     colors = {}
     for column, note in zip(st.columns(7), LETTERS):
         color_key = f"color_{note}"
@@ -97,9 +146,34 @@ def main():
         with column:
             colors[note] = st.color_picker(
                 f"{(SOLFEGE_EN if language == 'en' else SOLFEGE)[note]} ({note})",
-                key=color_key, on_change=discard_result,
+                key=color_key, on_change=palette_changed,
             )
+    browser_palette(
+        key="palette_storage",
+        data={
+            "session": st.session_state["palette_session"],
+            "ready": st.session_state.get("palette_ready", False),
+            "palette": serialize_palette(colors),
+            "messages": {key: t(f"palette_{key}") for key in ("loading", "saved", "unavailable")},
+        },
+        on_loaded_change=restore_browser_palette,
+    )
     st.button(t("reset"), key="reset", on_click=reset_palette)
+    with st.expander(t("palette_files")):
+        st.caption(t("palette_help"))
+        st.download_button(
+            t("palette_download"), serialize_palette(colors),
+            file_name="score-palette.json", mime="application/json",
+            key="palette_download", on_click="ignore",
+        )
+        st.file_uploader(
+            t("palette_upload"), type=["json"], key="palette_upload",
+            max_upload_size=1, on_change=import_palette,
+            help=t("palette_upload_help"),
+        )
+    notice = st.session_state.get("palette_notice")
+    if notice:
+        (st.success if notice == "palette_imported" else st.warning)(t(notice))
     allow_partial = st.checkbox(
         t("partial"), key="allow_partial",
         on_change=discard_result,

@@ -31,6 +31,14 @@ By default, uncolored notes or recognition warnings block PDF output, leaving on
 
 Changing the file, colors, or partial-output setting clears the previous results and download buttons. Click **Clear PDF and results** to clear the upload and results held by the app.
 
+### Remembering your colors
+
+Colors are automatically saved in this browser and restored when you reopen or reload the app, including after the app server restarts. The message below the color pickers confirms when saving succeeds. **Reset colors** also updates the saved palette. Saving is specific to the browser profile and site address (including the port for local use); other devices and browsers have separate settings. Clearing site data removes the saved palette, and private browsing may discard it when closed. A shared browser profile shares its palette.
+
+Under **Save or load color settings**, download `score-palette.json` for backup or transfer to another device. Upload a settings file to replace all seven colors and automatically save them in that browser. Invalid settings leave your current colors and conversion results unchanged. Files must be at most 4 KB and contain seven `#RRGGBB` colors for C–B.
+
+Only the palette is persisted; uploaded PDFs and conversion results are not stored in the browser. Browser storage failures show a message and do not prevent conversion or settings-file use.
+
 ## Supported formats and limitations
 
 - Supports vector PDFs using legacy Maestro fonts or CID fonts with supported character mappings.
