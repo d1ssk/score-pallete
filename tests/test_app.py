@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from streamlit.testing.v1 import AppTest
 
-from test_conversion import make_score
+from test_conversion import make_score, make_leland_score
 
 
 APP = Path(__file__).resolve().parents[1] / "app.py"
@@ -99,6 +99,21 @@ class AppTests(unittest.TestCase):
             button(app, "PDFと結果をクリア").click().run()
             self.assertNotIn("result", app.session_state)
             self.assertEqual(app.session_state["upload_generation"], 1)
+
+    def test_leland_upload_produces_download_without_partial_mode(self):
+        upload = BytesIO(make_leland_score())
+        upload.name = "leland.pdf"
+        with patch("streamlit.file_uploader", side_effect=lambda *a, **kw: upload if kw.get("type") == ["pdf"] else None):
+            app = AppTest.from_file(str(APP)).run()
+            button(app, "色付けする").click().run()
+            self.assertFalse(app.exception)
+            self.assertFalse(app.error)
+            self.assertFalse(app.checkbox[0].value)
+            self.assertEqual(len(app.success), 1)
+            result = app.session_state["result"]
+            self.assertEqual((result.colored, result.skipped), (4, 0))
+            self.assertTrue(result.pdf_bytes.startswith(b"%PDF-"))
+            self.assertEqual(len(app.get("download_button")), 3)
 
     def test_partial_mode_and_error_feedback(self):
         upload = BytesIO(make_score(blank_page=True))

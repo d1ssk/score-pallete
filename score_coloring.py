@@ -41,7 +41,14 @@ MAESTRO_CID_SYMBOLS = {
     0x0153: "black", 0x02D9: "half", 0x0077: "whole",
     0x0026: "treble", 0x003F: "bass", 0x0042: "c_clef",
 }
-NOTE_KINDS = {"black", "half", "whole"}
+# Leland uses SMuFL Unicode values in its PDF ToUnicode map.
+# https://w3c.github.io/smufl/latest/tables/noteheads.html
+# https://w3c.github.io/smufl/latest/tables/clefs.html
+LELAND_SYMBOLS = {
+    0xE0A4: "black", 0xE0A3: "half", 0xE0A2: "whole", 0xE0A9: "x_black",
+    0xE050: "treble", 0xE062: "bass", 0xE05C: "c_clef",
+}
+NOTE_KINDS = {"black", "half", "whole", "x_black"}
 REFERENCE_PITCH = {"treble": 4 * 7 + 4, "bass": 3 * 7 + 3, "c_clef": 4 * 7}
 
 
@@ -139,6 +146,8 @@ class Font:
         if len(text) != 1:
             return None
         unicode_value = ord(text)
+        if self.name.lstrip("/").split("+")[-1] == "Leland":
+            return LELAND_SYMBOLS.get(unicode_value)
         if 0xF000 <= unicode_value <= 0xF0FF:
             return LEGACY_SYMBOLS.get(unicode_value - 0xF000)
         if self.maestro:

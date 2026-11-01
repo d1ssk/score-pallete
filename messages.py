@@ -12,18 +12,22 @@ TEXT = {
         "For PDFs using supported music fonts only. Scanned or photographed sheet music is not supported.",
     ),
     "rules_body": (
-        "従来型Maestroフォント、および対応する文字配置のCIDフォントを使ったPDFが対象です。"
+        "従来型Maestroフォント、対応する文字配置のCIDフォント、およびLelandフォントを使ったPDFが対象です。"
+        "Lelandは通常の黒い符頭・白い符頭・全音符・黒い×符頭と、通常のト音・ヘ音・ハ音記号に対応します。"
         "五線・文字・レイアウトを保ち、音符の符頭を着色します。\n\n"
         "固定ドの記譜上の音名で分類します。♯・♭・オクターブ違いは同じ色になります。"
-        "白い符頭は輪郭を着色します。\n\n"
-        "画像、図形のみの音符、SMuFLなど未対応フォント、Form XObject内の楽譜、"
+        "白い符頭は輪郭を着色します。×符頭も五線上の位置による記譜音名で着色します。\n\n"
+        "画像、図形のみの音符、その他の未対応フォント・記号、Form XObject内の楽譜、"
         "回転ページは対象外です。未対応の音符は検出自体ができないこともあるため、"
         "処理後の楽譜をご確認ください。",
-        "Supports legacy Maestro fonts and CID fonts with supported character mappings. "
+        "Supports legacy Maestro fonts, CID fonts with supported character mappings, and Leland. "
+        "Leland support covers standard black, half, whole, and black X noteheads, "
+        "with standard G, F, and C clefs. "
         "Colors noteheads while preserving staff lines, text, and layout.\n\n"
         "Colors follow written note names (fixed do). Sharps, flats, and different octaves "
-        "share the same color. For hollow noteheads, only the outline is colored.\n\n"
-        "Images, notes drawn only as shapes, unsupported fonts such as SMuFL, music inside "
+        "share the same color. For hollow noteheads, only the outline is colored. "
+        "X noteheads are also colored by their written staff position.\n\n"
+        "Images, notes drawn only as shapes, other unsupported fonts or symbols, music inside "
         "Form XObjects, and rotated pages are not supported. Some unsupported notes may "
         "not be detected at all. Please check the resulting score.",
     ),

@@ -41,10 +41,10 @@ Only the palette is persisted; uploaded PDFs and conversion results are not stor
 
 ## Supported formats and limitations
 
-- Supports vector PDFs using legacy Maestro fonts or CID fonts with supported character mappings.
+- Supports vector PDFs using legacy Maestro fonts, CID fonts with supported character mappings, or Leland fonts with SMuFL ToUnicode mappings. Leland support covers standard black, half, whole, and black X noteheads with standard G, F, and C clefs; X noteheads are colored by their written staff position.
 - Colors filled noteheads and the outlines of hollow and whole-note heads while preserving staff lines, text, flags, and layout.
 - Colors follow written note names using fixed do. Sharps and flats are not distinguished, and notes in different octaves share the same color.
-- Scans, photographs, noteheads drawn only as shapes, unsupported fonts such as SMuFL, music inside Form XObjects, and rotated pages are not supported. Encrypted PDFs are also rejected.
+- Scans, photographs, noteheads drawn only as shapes, other unsupported fonts or symbols, music inside Form XObjects, and rotated pages are not supported. Encrypted PDFs are also rejected.
 - Unsupported notes may go undetected. A count of zero uncolored notes does not guarantee that every note was recognized correctly. Always check the output.
 
 In the CSV, a `status` of `colored` identifies a note selected for coloring. Other statuses indicate uncolored notes, including `no_staff` (staff not found), `no_clef` (clef not found), `ambiguous_staff` (uncertain staff assignment), and `off_staff_grid` (position does not align with the staff grid). When PDF output is blocked in normal mode, `colored` means the note could be colored if output were allowed. Coordinates are in PDF points measured from the top-left corner of the page's MediaBox. The CSV uses UTF-8 with a BOM to help applications display Japanese text correctly.

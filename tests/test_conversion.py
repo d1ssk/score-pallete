@@ -46,7 +46,69 @@ def make_score(*, no_clef=False, blank_page=False, rotated=False, encrypted=Fals
     return output.getvalue()
 
 
+def make_leland_score(font_name="/Leland"):
+    writer = PdfWriter()
+    writer.clone_document_from_reader(PdfReader(BytesIO(make_score())))
+    page = writer.pages[0]
+    cmap = DecodedStreamObject()
+    cmap.set_data(b"1 begincodespacerange <0000> <FFFF> endcodespacerange "
+                  b"5 beginbfchar <0001> <E050> <0002> <E0A4> <0003> <E0A3> "
+                  b"<0004> <E0A2> <0005> <E0A9> endbfchar")
+    descendant = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/CIDFontType2"),
+        NameObject("/BaseFont"): NameObject(font_name),
+        NameObject("/DW"): NumberObject(500),
+    })
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type0"),
+        NameObject("/BaseFont"): NameObject(font_name),
+        NameObject("/Encoding"): NameObject("/Identity-H"),
+        NameObject("/ToUnicode"): writer._add_object(cmap),
+        NameObject("/DescendantFonts"): ArrayObject([writer._add_object(descendant)]),
+    })
+    page["/Resources"]["/Font"][NameObject("/F1")] = writer._add_object(font)
+    content = page.get_contents().get_data()
+    content = content.replace(b"<26>", b"<0001>").replace(b"<CF>", b"<0002>").replace(b"<FA>", b"<0003>")
+    stream = DecodedStreamObject()
+    stream.set_data(content + b"\nBT /F1 20 Tf 1 0 0 1 120 170 Tm <0004> Tj "
+                    b"1 0 0 1 150 175 Tm <0005> Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
 class ConversionTests(unittest.TestCase):
+    def test_leland_cid_notes_and_subset_fonts(self):
+        for font_name in ("/Leland", "/ABCDEF+Leland"):
+            with self.subTest(font_name=font_name):
+                data = make_leland_score(font_name)
+                result = convert_pdf(data, {"E": "#123456"})
+                self.assertEqual((result.colored, result.skipped, result.issues), (4, 0, []))
+                self.assertIsNotNone(result.pdf_bytes)
+                rows = list(csv.DictReader(StringIO(result.csv_bytes.decode("utf-8-sig"))))
+                self.assertEqual([(r["note"], r["written_octave"], r["kind"]) for r in rows],
+                                 [("E", "4", "black"), ("C", "4", "half"),
+                                  ("G", "4", "whole"), ("A", "4", "x_black")])
+                self.assertEqual(rows[0]["color"], "#123456")
+                before = PdfReader(BytesIO(data)).pages[0]
+                after = PdfReader(BytesIO(result.pdf_bytes)).pages[0]
+                self.assertEqual(before.extract_text(), after.extract_text())
+                _, _, ga, sa, _ = scan_page(before)
+                stream, _, gb, sb, _ = scan_page(after)
+                self.assertEqual([(g.kind, g.x, g.y) for g in ga], [(g.kind, g.x, g.y) for g in gb])
+                self.assertEqual(sa, sb)
+                rgb = next(args for args, op in stream.operations if op == b"rg")
+                for actual, expected in zip(rgb, (0x12 / 255, 0x34 / 255, 0x56 / 255)):
+                    self.assertAlmostEqual(float(actual), expected, places=6)
+
+    def test_leland_mapping_is_not_applied_to_unrelated_fonts(self):
+        result = convert_pdf(make_leland_score("/UnrelatedFont"))
+        self.assertEqual(result.colored, 0)
+        self.assertIsNone(result.pdf_bytes)
+
     def test_colors_pitch_and_positions_survive(self):
         data = make_score()
         progress = []
